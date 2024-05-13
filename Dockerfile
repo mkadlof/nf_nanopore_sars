@@ -1,3 +1,4 @@
+# Package versions
 ARG SAMTOOLS_VERSION="1.17"
 ARG BCFTOOLS_VERSION="1.17"
 ARG HTSLIB_VERSION="1.17"
@@ -8,6 +9,9 @@ ARG USHER_VERSION="0.6.3"
 ARG ISA_VERSION="2.30.0"
 ARG TBB_VERSION="2019_U9"
 ARG TBB_VERSION2="v2021.10.0"
+ARG NEXTCLADE_VERSION="3.3.1"
+ARG VARSCAN_VERSION="2.4.6"
+ARG PICARD_VERSION="2.27.5"
 
 # buildar-base
 FROM ubuntu:22.04 AS builder-base
@@ -101,8 +105,11 @@ RUN curl -fsSL "https://github.com/freebayes/freebayes/releases/download/v${FREE
     ln -s freebayes-${FREEBAYESS_VERSION}-linux-amd64-static freebayes
 ENV PATH="/opt/freebayes/bin:$PATH"
 
-# builder-pangolin
-FROM builder-base as builder-pangolin
+# builder-python
+# Here goes all packages installed as python packages.
+# - Pangolin
+# - PycoQC
+FROM builder-base as builder-python
 ARG PANGOLIN_VERSION
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH=$VIRTUAL_ENV/bin:${PATH}
@@ -219,6 +226,29 @@ RUN curl -fsSL "https://github.com/oneapi-src/oneTBB/archive/${TBB_VERSION}.tar.
     mkdir -p /opt/tbb/lib && \
     cp /downloads/usher/build/tbb_cmake_build/tbb_cmake_build_subdir_release/libtbb_preview.so.2 /opt/tbb/lib
 
+# builder-nextclade
+FROM builder-base as builder-nextclade
+ARG NEXTCLADE_VERSION
+WORKDIR /opt/nextclade/bin
+RUN curl -fsSL "https://github.com/nextstrain/nextclade/releases/download/${NEXTCLADE_VERSION}/nextclade-x86_64-unknown-linux-gnu" -o "nextclade" && \
+    chmod +x nextclade
+RUN mkdir -p /SARS-CoV2/
+ENV PATH="/opt/nextclade/bin:$PATH"
+RUN nextclade dataset get --name='sars-cov-2' --output-dir=/SARS-CoV2/nextclade/
+
+# builder-varscan
+FROM builder-base as builder-varscan
+ARG VARSCAN_VERSION
+WORKDIR /opt/varscan
+RUN curl -fsSL "https://github.com/dkoboldt/varscan/releases/download/v${VARSCAN_VERSION}/VarScan.v${VARSCAN_VERSION}.jar" -o "VarScan.v${VARSCAN_VERSION}.jar" && \
+    ln -s VarScan.v${VARSCAN_VERSION}.jar varscan.jar
+
+# builder-picard
+FROM builder-base as builder-picard
+ARG PICARD_VERSION
+WORKDIR /opt/picard
+RUN curl -fsSL "https://github.com/broadinstitute/picard/releases/download/${PICARD_VERSION}/picard.jar" -o "picard.jar"
+
 # main
 FROM ubuntu:22.04 AS main
 RUN apt update && \
@@ -229,7 +259,7 @@ ADD third-party/mafft/mafft_7.520-1_amd64.deb /
 RUN dpkg -i mafft_7.520-1_amd64.deb && \
     rm -f /mafft_7.520-1_amd64.deb
 
-COPY --from=builder-pangolin /opt/venv /opt/venv
+COPY --from=builder-python /opt/venv /opt/venv
 COPY --from=builder-samtools /opt/samtools /opt/samtools
 COPY --from=builder-bcftools /opt/bcftools /opt/bcftools
 COPY --from=builder-htslib /opt/htslib /opt/htslib
@@ -238,5 +268,20 @@ COPY --from=builder-vcftools /opt/vcftools /opt/vcftools
 COPY --from=builder-gofasta /opt/gofasta /opt/gofasta
 COPY --from=builder-usher /opt/usher/bin/usher /opt/usher/bin/usher
 COPY --from=builder-usher /opt/tbb /opt/tbb
+COPY --from=builder-nextclade /opt/nextclade /opt/nextclade
+COPY --from=builder-varscan /opt/varscan /opt/varscan
+COPY --from=builder-picard /opt/picard /opt/picard
 
-ENV PATH=/opt/bedtools/bin:/opt/htslib/bin:/opt/bcftools/bin:/opt/samtools/bin:$VIRTUAL_ENV/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV PATH /opt/nextclade/bin:\
+/opt/bedtools/bin:\
+/opt/htslib/bin:\
+/opt/bcftools/bin:\
+/opt/samtools/bin:\
+$VIRTUAL_ENV/bin:\
+/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+## Kopiowanie wymaganych plikow
+COPY data/genome /SARS-CoV2/genome
+COPY data/primers /SARS-CoV2/primers
+COPY data/contamination  /SARS-CoV2/contamination
+

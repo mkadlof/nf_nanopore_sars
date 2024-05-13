@@ -1,0 +1,6 @@
+w tym katalogu umieszamy wlasne wersje schematu primerow. Instrukcja opisana jest w dokumentacji punkt B.3. Schematy pobrane z internetu zostaly przeze mnie przeczyczczone. t.j nazwa primeru zawsze zaczyna sie ko "nCoV-2019_"/ Dodano okazjonalnie brakujaca kolumne 6. Plik z ze schematem zawsze nazwya sie nCoV-2019.scheme.bed. Dodano brakujace pliki pairs.tsv.
+Katalog ovserco to primery midnigh1200 z 5 dodatkowymi primerami suplementujacymi
+obserco_extra -> przedluzylem pierwszy primer do poczatku sekwencji a ostatni do jej konca
+Varskip to primery z protokolu NEBNext VarSkip Short v2 SARS-CoV-2 sciagniete i poprawione z https://github.com/nebiolabs/VarSkip/blob/main/neb_vss2a.primer.bed
+cat neb_vss2a.primer.bed  | sed s'/NC_045512.2/MN908947.3/'g | sed s'/varskip-0317-1_/nCoV-2019_/'g | sort -k4 | awk  '{print $1, $2,$3,$4,"nCoV-2019_"$5, $6}' | tr " " "\t" >> neb_vss2a.primer_fixed.bed
+cp neb_vss2a.primer_fixed.bed nCoV-2019.scheme.bed

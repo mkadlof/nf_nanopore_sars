@@ -1,0 +1,7 @@
+W tym katalogu zachowujemywyniki Varscana dla dwoch probek z EQA SARS2 - 04 i 05. Obie probki mialy zawierajac kontaminacje dwoma wirusami SARS-CoV-2. Sample 4 to kontaminacja wariantami alpha/delta, a 05 wariantami omicron/omicron.
+w katalogu okd sa kontaminacje oparte nie tylko o snp-y ale i INDELE poprawilem to bo w EQA2024 wydaje sie ze dziala lepiej. Musialem tez poprawic w maste argumenty varscan
+
+Stad bralem dane, stamdatd jest tez wywolanie (varscan dziala na forvariants wiec depth moze wpywac na wyniki)
+(base) michall@compute:~/git/pzh_pipeline_sars_nanopore/contamination$ cp ~/EQA/SARS/SARS1/rework_conainer_2_2_eqa_test/conatminated/04_contaminations.txt ESIB_EQA_2023.SARS1.04_contamination.txt
+(base) michall@compute:~/git/pzh_pipeline_sars_nanopore/contamination$ cp ~/EQA/SARS/SARS1/rework_conainer_2_2_eqa_test/conatminated/05_contaminations.txt ESIB_EQA_2023.SARS1.05_contaminat
+ion.txt
