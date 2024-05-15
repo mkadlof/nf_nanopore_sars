@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# This script runs the nextflow pipeline with the given parameters
+nextflow run nf_pipeline.nf \
+    -config nextflow.config \
+    -with-report report.html \
+    -with-dag flowchart-raw.png \
+    -with-docker nf_nanopore_sars-3.0-main:latest \
+    -resume

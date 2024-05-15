@@ -1,1 +1,38 @@
+run_nf_pipeline.sh
+
+# nextflow
+.nextflow/
+.nextflow.log*
+work/
+*.html
+flowchart-raw.png
+results/
+
+# pyenv environment
+.python-version
+
+# PyCharm
 .idea/
+
+### Vim ###
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Writerside
+doc/*
+!doc/images/
+!doc/topics/
+!doc/pdfSourceDOC.pdf
+
+# external databases
+data/pangolin
+data/nextclade
+data/kraken
+data/freyja
+
+# Modeller
+# file with key
+third-party/modeller/config.py
