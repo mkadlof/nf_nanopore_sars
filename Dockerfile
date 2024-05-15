@@ -253,7 +253,8 @@ RUN curl -fsSL "https://github.com/broadinstitute/picard/releases/download/${PIC
 FROM ubuntu:22.04 AS main
 RUN apt update && \
     apt install --yes --no-install-recommends python3 \
-                                              openjdk-17-jre-headless
+                                              openjdk-17-jre-headless \
+                                              minimap2
 
 ADD third-party/mafft/mafft_7.520-1_amd64.deb /
 RUN dpkg -i mafft_7.520-1_amd64.deb && \
@@ -281,7 +282,6 @@ $VIRTUAL_ENV/bin:\
 /usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 ## Kopiowanie wymaganych plikow
-COPY data/genome /SARS-CoV2/genome
-COPY data/primers /SARS-CoV2/primers
-COPY data/contamination  /SARS-CoV2/contamination
-
+COPY data/genome/SarsCov2 /home/data/genome
+COPY data/primers /home/data/primers
+COPY data/contamination  /home/data/contamination
