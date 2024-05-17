@@ -3,8 +3,8 @@
 # This script runs the nextflow pipeline with the given parameters
 nextflow run nf_pipeline.nf \
     --reads '/path/to/reads/ESIB_EQA_2023.SARS2_*.fastq.gz' \
+    --primers '/absolute/path/to/primers/file.bed' \
     -config nextflow.config \
     -with-report report.html \
     -with-dag flowchart-raw.png \
-    -with-docker nf_nanopore_sars-3.0-main:latest \
     -resume

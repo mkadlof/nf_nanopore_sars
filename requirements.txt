@@ -15,5 +15,6 @@ git+https://github.com/cov-lineages/constellations.git@f2d5a096a744d444b1dd42509
 git+https://github.com/a-slide/pycoQC.git
 
 # Custom scripts dependencies:
-pyvcf3==1.0.3
-seaborn
+pyvcf3~=1.0.3
+seaborn~=0.13.2
+pysam~=0.22.1

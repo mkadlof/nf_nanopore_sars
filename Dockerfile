@@ -254,7 +254,8 @@ FROM ubuntu:22.04 AS main
 RUN apt update && \
     apt install --yes --no-install-recommends python3 \
                                               openjdk-17-jre-headless \
-                                              minimap2
+                                              minimap2 \
+                                              bc
 
 ADD third-party/mafft/mafft_7.520-1_amd64.deb /
 RUN dpkg -i mafft_7.520-1_amd64.deb && \
@@ -273,6 +274,8 @@ COPY --from=builder-nextclade /opt/nextclade /opt/nextclade
 COPY --from=builder-varscan /opt/varscan /opt/varscan
 COPY --from=builder-picard /opt/picard /opt/picard
 
+ENV VIRTUAL_ENV=/opt/venv
+
 ENV PATH /opt/nextclade/bin:\
 /opt/bedtools/bin:\
 /opt/htslib/bin:\
@@ -285,3 +288,6 @@ $VIRTUAL_ENV/bin:\
 COPY data/genome/SarsCov2 /home/data/genome
 COPY data/primers /home/data/primers
 COPY data/contamination  /home/data/contamination
+
+WORKDIR /home
+
