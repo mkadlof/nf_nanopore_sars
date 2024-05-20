@@ -9,6 +9,7 @@ flowchart-raw.png
 results/
 .nf-test
 .nf-test.log
+tests/modules/*.snap
 
 
 # pyenv environment
