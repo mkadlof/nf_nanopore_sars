@@ -16,3 +16,8 @@ Testing
 -------
 
     nf-tests test
+
+Pipeline overview
+-----------------
+
+![Pipeline overview](flowchart-raw.png)

@@ -8,11 +8,10 @@ process extract_snp {
     val REF_GENOME_ID
 
     output:
-    tuple val(sampleId), path('medaka_annotated_filtered-2.vcf.gz')
+    tuple val(sampleId), path('medaka_annotated_filtered-2.vcf.gz'), path('medaka_annotated_filtered-2.vcf.gz.tbi')
 
     script:
     """
-    echo "REF_GENOME_ID: ${REF_GENOME_ID}"
     zcat medaka_annotated_filtered.vcf.gz | \
         awk -v REF="${REF_GENOME_ID}" '{if(\$1 != REF || (\$1  == REF && length(\$5) == length(\$4))) print \$0}' | \
         bcftools sort | \
