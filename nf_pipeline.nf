@@ -25,10 +25,12 @@ params.chunk_overlap = 400                // Chunk overlap for medaka
 params.input_genome = '/home/data/genome/sarscov2.fasta' // Path to the reference genome fasta
 
 
+include { genome_id } from './modules/genome_id.nf'
 include { minimap } from './modules/minimap.nf'
 include { filter } from './modules/filter.nf'
 include { masking } from './modules/masking.nf'
 include { medaka } from './modules/medaka.nf'
+include { extract_snp } from './modules/extract_snp.nf'
 
 workflow {
     // Channel
@@ -36,8 +38,11 @@ workflow {
     primers = Channel.value(params.primers as Path)
 
     // Processes
+    genome_id()
     minimap(reads)
     filter(minimap.out, primers)
     masking(filter.out)
     medaka(filter.out)
+    extract_snp(medaka.out, genome_id.out)
+    view(extract_snp)
 }
