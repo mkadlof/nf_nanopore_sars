@@ -32,6 +32,7 @@ include { masking } from './modules/masking.nf'
 include { medaka } from './modules/medaka.nf'
 include { extract_snp } from './modules/extract_snp.nf'
 include { new_ref_genome } from './modules/new_ref_genome.nf'
+include { coinfections } from './modules/coinfections.nf'
 
 workflow {
     // Channel
@@ -46,4 +47,5 @@ workflow {
     medaka(filter.out)
     extract_snp(medaka.out, genome_id.out)
     new_ref_genome(extract_snp.out)
+    coinfections(minimap.out, primers)
 }

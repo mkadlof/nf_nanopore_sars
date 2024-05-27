@@ -287,7 +287,7 @@ $VIRTUAL_ENV/bin:\
 ## Kopiowanie wymaganych plikow
 COPY data/genome/SarsCov2 /home/data/genome
 COPY data/primers /home/data/primers
-COPY data/contamination  /home/data/contamination
+COPY data/coinfections  /home/data/coinfections
 
 WORKDIR /home
 
