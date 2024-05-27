@@ -5,7 +5,7 @@ run_nf_pipeline.sh
 .nextflow.log*
 work/
 *.html
-flowchart-raw.png
+#flowchart-raw.png
 results/
 .nf-test
 .nf-test.log

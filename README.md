@@ -20,4 +20,4 @@ Testing
 Pipeline overview
 -----------------
 
-![Pipeline overview](flowchart-raw.png)
+![flowchart](flowchart-raw.png "overview of the pipeline")
