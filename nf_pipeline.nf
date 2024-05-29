@@ -33,6 +33,7 @@ include { medaka } from './modules/medaka.nf'
 include { extract_snp } from './modules/extract_snp.nf'
 include { new_ref_genome } from './modules/new_ref_genome.nf'
 include { coinfections } from './modules/coinfections.nf'
+include { minimap_2nd } from './modules/minimap_2nd.nf'
 
 workflow {
     // Channel
@@ -41,11 +42,18 @@ workflow {
 
     // Processes
     genome_id()
+
+    // 1st run
     minimap(reads)
     filter(minimap.out, primers)
     masking(filter.out)
     medaka(filter.out)
     extract_snp(medaka.out, genome_id.out)
     new_ref_genome(extract_snp.out)
+
+    // 2nd run
+    minimap_2nd(reads, new_ref_genome.out)
+
+    // Auxiliary tasks
     coinfections(minimap.out, primers)
 }
