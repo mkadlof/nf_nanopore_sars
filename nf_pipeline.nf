@@ -18,6 +18,10 @@ params.pval = 0.05                        // p-value for presence of given SNP/I
 params.lower_ambig = 0.45                 // A value in the range 0-1, the percentage of reads with an alternative
                                           // allele version at a given position required to introduce the ambiguous
                                           // symbol at that position.
+params.upper_ambig = 0.55                 // A value in the range 0-1, the percentage of reads with an alternative
+                                          // allele version at a given position required to introduce the alternative
+                                          // allele at that position, and not the ambiguous allele symbol. The value
+                                          // must be greater than that provided with the lower_ambig argument.
 
 
 // MEDAKA PARAMETERS
@@ -41,6 +45,7 @@ include { new_ref_genome } from './modules/new_ref_genome.nf'
 include { coinfections } from './modules/coinfections.nf'
 include { minimap_2nd } from './modules/minimap_2nd.nf'
 include { ambiguities } from './modules/ambiguities.nf'
+include { merge } from './modules/merge.nf'
 
 workflow {
     // Channel
@@ -63,7 +68,11 @@ workflow {
     filter_2nd(minimap_2nd.out, primers)
     medaka_2nd(filter_2nd.out, new_ref_genome.out)
 
+    // post-runs tasks
+    ambiguities(filter_2nd.out)
+    merge(medaka_2nd.out.join(ambiguities.out))
+
     // Auxiliary tasks
     coinfections(minimap.out, primers)
-    ambiguities(filter_2nd.out)
+
 }
