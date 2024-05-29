@@ -28,6 +28,7 @@ params.input_genome = '/home/data/genome/sarscov2.fasta' // Path to the referenc
 include { genome_id } from './modules/genome_id.nf'
 include { minimap } from './modules/minimap.nf'
 include { filter } from './modules/filter.nf'
+include { filter as filter_2nd } from './modules/filter.nf'
 include { masking } from './modules/masking.nf'
 include { medaka } from './modules/medaka.nf'
 include { extract_snp } from './modules/extract_snp.nf'
@@ -53,6 +54,7 @@ workflow {
 
     // 2nd run
     minimap_2nd(reads, new_ref_genome.out)
+    filter_2nd(minimap_2nd.out, primers)
 
     // Auxiliary tasks
     coinfections(minimap.out, primers)
