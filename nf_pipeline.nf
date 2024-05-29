@@ -14,7 +14,11 @@ params.extra_bed_offset = 10              // Value by how much we additionally e
                                           // if the required coverage was not achieved
 params.quality_coverage = 1               // The minimum quality of a nucleotide required for it to be included in the
                                           // coverage count
-params.pval = 0.05                        // pvalue for presence of given SNP/INDEL
+params.pval = 0.05                        // p-value for presence of given SNP/INDEL
+params.lower_ambig = 0.45                 // A value in the range 0-1, the percentage of reads with an alternative
+                                          // allele version at a given position required to introduce the ambiguous
+                                          // symbol at that position.
+
 
 // MEDAKA PARAMETERS
 // ====================
@@ -36,6 +40,7 @@ include { extract_snp } from './modules/extract_snp.nf'
 include { new_ref_genome } from './modules/new_ref_genome.nf'
 include { coinfections } from './modules/coinfections.nf'
 include { minimap_2nd } from './modules/minimap_2nd.nf'
+include { ambiguities } from './modules/ambiguities.nf'
 
 workflow {
     // Channel
@@ -60,4 +65,5 @@ workflow {
 
     // Auxiliary tasks
     coinfections(minimap.out, primers)
+    ambiguities(filter_2nd.out)
 }
