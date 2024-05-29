@@ -46,6 +46,8 @@ include { coinfections } from './modules/coinfections.nf'
 include { minimap_2nd } from './modules/minimap_2nd.nf'
 include { ambiguities } from './modules/ambiguities.nf'
 include { merge } from './modules/merge.nf'
+include { frameshift } from './modules/frameshift.nf'
+include { merge_runs } from './modules/merge_runs.nf'
 
 workflow {
     // Channel
@@ -71,6 +73,8 @@ workflow {
     // post-runs tasks
     ambiguities(filter_2nd.out)
     merge(medaka_2nd.out.join(ambiguities.out))
+    frameshift(merge.out, genome_id.out)
+    merge_runs(extract_snp.out.join(frameshift.out))
 
     // Auxiliary tasks
     coinfections(minimap.out, primers)
