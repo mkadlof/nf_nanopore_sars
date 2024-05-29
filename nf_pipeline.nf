@@ -31,6 +31,7 @@ include { filter } from './modules/filter.nf'
 include { filter as filter_2nd } from './modules/filter.nf'
 include { masking } from './modules/masking.nf'
 include { medaka } from './modules/medaka.nf'
+include { medaka_2nd } from './modules/medaka_2nd.nf'
 include { extract_snp } from './modules/extract_snp.nf'
 include { new_ref_genome } from './modules/new_ref_genome.nf'
 include { coinfections } from './modules/coinfections.nf'
@@ -55,6 +56,7 @@ workflow {
     // 2nd run
     minimap_2nd(reads, new_ref_genome.out)
     filter_2nd(minimap_2nd.out, primers)
+    medaka_2nd(filter_2nd.out, new_ref_genome.out)
 
     // Auxiliary tasks
     coinfections(minimap.out, primers)
