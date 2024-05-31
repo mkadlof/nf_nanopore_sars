@@ -1,4 +1,4 @@
-process masking {
+process lowCov {
     publishDir "results/${sampleId}", mode: 'symlink'
 
     input:

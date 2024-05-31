@@ -37,7 +37,7 @@ include { genome_id } from './modules/genome_id.nf'
 include { minimap } from './modules/minimap.nf'
 include { filter } from './modules/filter.nf'
 include { filter as filter_2nd } from './modules/filter.nf'
-include { masking } from './modules/masking.nf'
+include { lowCov } from './modules/low_cov.nf'
 include { medaka } from './modules/medaka.nf'
 include { medaka_2nd } from './modules/medaka_2nd.nf'
 include { extract_snp } from './modules/extract_snp.nf'
@@ -49,6 +49,7 @@ include { merge } from './modules/merge.nf'
 include { frameshift } from './modules/frameshift.nf'
 include { merge_runs } from './modules/merge_runs.nf'
 include { consensus } from './modules/consensus.nf'
+include { consensusMasking } from './modules/consensusMasking.nf'
 
 workflow {
     // Channel
@@ -61,7 +62,7 @@ workflow {
     // 1st run
     minimap(reads)
     filter(minimap.out, primers)
-    masking(filter.out)
+    lowCov(filter.out)
     medaka(filter.out)
     extract_snp(medaka.out, genome_id.out)
     new_ref_genome(extract_snp.out)
@@ -77,6 +78,7 @@ workflow {
     frameshift(merge.out, genome_id.out)
     merge_runs(extract_snp.out.join(frameshift.out))
     consensus(merge_runs.out)
+    consensusMasking(lowCov.out[1].join(consensus.out))
 
     // Auxiliary tasks
     coinfections(minimap.out, primers)
