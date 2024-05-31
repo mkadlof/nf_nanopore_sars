@@ -5,6 +5,7 @@ nextflow run nf_pipeline.nf \
     --reads '/path/to/reads/ESIB_EQA_2023.SARS2_*.fastq.gz' \
     --primers '/absolute/path/to/primers/file.bed' \
     --genome_dir_abs_path '/absolute/path/to/dir/where/genome/fasta/is/sarscov2.fasta' \
+    --pangolin_db_absolute_path_on_host '/home/user/path/to/pangolin_db' \
     -config nextflow.config \
     -with-report report.html \
     -with-dag flowchart-raw.png \

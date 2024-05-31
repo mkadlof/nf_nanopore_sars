@@ -5,7 +5,7 @@ Simple script to replace low-coverage aminoacids with N in a sequence
 Input is a alignment between reference (with N in place of low coverage regions) and a sequence with SNPs and SV
 Elements of the latter sequence will be replaced with Ns
 1st argument is the alignment
-2nd arguemnt is the name of the output fasta
+2nd argument is the name of the output fasta
 """
 
 import sys

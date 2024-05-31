@@ -50,6 +50,7 @@ include { frameshift } from './modules/frameshift.nf'
 include { merge_runs } from './modules/merge_runs.nf'
 include { consensus } from './modules/consensus.nf'
 include { consensusMasking } from './modules/consensusMasking.nf'
+include { pangolin } from './modules/pangolin.nf'
 
 workflow {
     // Channel
@@ -79,6 +80,9 @@ workflow {
     merge_runs(extract_snp.out.join(frameshift.out))
     consensus(merge_runs.out)
     consensusMasking(lowCov.out[1].join(consensus.out))
+
+    // Variant identification
+    pangolin(consensusMasking.out)
 
     // Auxiliary tasks
     coinfections(minimap.out, primers)

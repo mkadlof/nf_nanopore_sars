@@ -275,7 +275,6 @@ COPY --from=builder-varscan /opt/varscan /opt/varscan
 COPY --from=builder-picard /opt/picard /opt/picard
 
 ENV VIRTUAL_ENV=/opt/venv
-
 ENV PATH /opt/nextclade/bin:\
 /opt/bedtools/bin:\
 /opt/htslib/bin:\
@@ -283,6 +282,7 @@ ENV PATH /opt/nextclade/bin:\
 /opt/samtools/bin:\
 $VIRTUAL_ENV/bin:\
 /usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV PYTHONPATH="/home/external_databases/pangolin"
 
 ## Kopiowanie wymaganych plikow
 COPY data/genome/SarsCov2 /home/data/genome
