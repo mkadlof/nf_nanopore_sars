@@ -51,6 +51,7 @@ include { merge_runs } from './modules/merge_runs.nf'
 include { consensus } from './modules/consensus.nf'
 include { consensusMasking } from './modules/consensusMasking.nf'
 include { pangolin } from './modules/pangolin.nf'
+include { nextclade } from './modules/nextclade.nf'
 
 workflow {
     // Channel
@@ -83,6 +84,8 @@ workflow {
 
     // Variant identification
     pangolin(consensusMasking.out)
+    nextclade(consensusMasking.out)
+
 
     // Auxiliary tasks
     coinfections(minimap.out, primers)

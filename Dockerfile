@@ -13,9 +13,18 @@ ARG NEXTCLADE_VERSION="3.3.1"
 ARG VARSCAN_VERSION="2.4.6"
 ARG PICARD_VERSION="2.27.5"
 
-# buildar-base
-FROM ubuntu:22.04 AS builder-base
+# This is multistage, parallel build. We first build a base image.
+# Then, in parallel, we build all the tools we need.
+# And then in the end we copy only necessary files to production image.
+
+# builder-base
+FROM python:3.11.8-bookworm AS builder-base
+
+ENV LANG en_US.UTF-8
 ENV VIRTUAL_ENV=/opt/venv
+ENV PATH=/$VIRTUAL_ENV/bin:$PATH:usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# We install some basic tools, build tools and libraries
 RUN apt update && \
     apt install --yes --no-install-recommends curl \
                                               ca-certificates \
@@ -132,6 +141,14 @@ RUN curl -fsSL "https://github.com/virus-evolution/gofasta/releases/download/v${
     chmod +x gofasta
 ENV PATH="/opt/gofasta/bin:$PATH"
 
+# builder-faToVcf
+# TODO: We consider this as unstable resource, so we should store it locally in third-party directory.
+FROM builder-base as builder-faToVcf
+WORKDIR /opt/blat/bin
+RUN curl -fsSL "https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/faToVcf" -o "faToVcf" && \
+    chmod +x faToVcf
+ENV PATH="/opt/blat/bin:$PATH"
+
 # builder-isa-l
 # This lib is a dependency of one of Usher binaries, we don't use it but it is still needed for building usher.
 # We do not copy that unnecesary binary to production image, and also we don't copy this i-sal lib, either.
@@ -200,10 +217,10 @@ RUN apt -y --no-install-recommends install gfortran-12 \
                                           libpciaccess0 \
                                           libpmix2 \
                                           libpmix-dev \
-                                          libprotobuf23 \
+                                          libprotobuf32 \
                                           libprotobuf-dev \
-                                          libprotobuf-lite23 \
-                                          libprotoc23 \
+                                          libprotobuf-lite32 \
+                                          libprotoc32 \
                                           libprotoc-dev \
                                           libpsm2-2 \
                                           libpsm-infinipath1 \
@@ -250,12 +267,21 @@ WORKDIR /opt/picard
 RUN curl -fsSL "https://github.com/broadinstitute/picard/releases/download/${PICARD_VERSION}/picard.jar" -o "picard.jar"
 
 # main
-FROM ubuntu:22.04 AS main
+FROM python:3.11.8-slim-bookworm AS main
+
+LABEL maintainer="Michal Lazniewski <mlazniewski@pzh.gov.pl>"
+LABEL maintainer="Michał Kadlof <mkadlof@pzh.gov.pl>"
+
+RUN echo 'alias ls="ls --color --group-directories-first"' >> /root/.bashrc && \
+    echo "PS1='\[\033[36m\][\[\033[m\]\[\033[34m\]\[\e[1m \u@\h \e[0m\] \[\033[32m\]\W\[\033[m\]\[\033[36m\]]\[\033[m\]# '" >> /root/.bashrc
+
 RUN apt update && \
-    apt install --yes --no-install-recommends python3 \
+    apt install --yes --no-install-recommends  bc\
                                               openjdk-17-jre-headless \
+                                              libdeflate-dev \
                                               minimap2 \
-                                              bc
+                                              libcurl4 \
+                                              procps
 
 ADD third-party/mafft/mafft_7.520-1_amd64.deb /
 RUN dpkg -i mafft_7.520-1_amd64.deb && \
@@ -268,6 +294,7 @@ COPY --from=builder-htslib /opt/htslib /opt/htslib
 COPY --from=builder-bedtools /downloads/bedtools2 /opt/bedtools
 COPY --from=builder-vcftools /opt/vcftools /opt/vcftools
 COPY --from=builder-gofasta /opt/gofasta /opt/gofasta
+COPY --from=builder-faToVcf /opt/blat /opt/blat
 COPY --from=builder-usher /opt/usher/bin/usher /opt/usher/bin/usher
 COPY --from=builder-usher /opt/tbb /opt/tbb
 COPY --from=builder-nextclade /opt/nextclade /opt/nextclade
@@ -275,12 +302,15 @@ COPY --from=builder-varscan /opt/varscan /opt/varscan
 COPY --from=builder-picard /opt/picard /opt/picard
 
 ENV VIRTUAL_ENV=/opt/venv
-ENV PATH /opt/nextclade/bin:\
-/opt/bedtools/bin:\
-/opt/htslib/bin:\
-/opt/bcftools/bin:\
+ENV PATH $VIRTUAL_ENV/bin:\
 /opt/samtools/bin:\
-$VIRTUAL_ENV/bin:\
+/opt/bcftools/bin:\
+/opt/htslib/bin:\
+/opt/bedtools/bin:\
+/opt/vcftools/bin:\
+/opt/gofasta/bin:\
+/opt/blat/bin:\
+/opt/nextclade/bin:\
 /usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENV PYTHONPATH="/home/external_databases/pangolin"
 
