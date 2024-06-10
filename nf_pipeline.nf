@@ -85,6 +85,6 @@ workflow {
 
     // Auxiliary tasks
     coinfections(minimap.out, primers)
-    snpEff(merge_runs.out)
+    snpEff(merge_runs.out.join(ambiguities.out))
 
 }
