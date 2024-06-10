@@ -7,6 +7,7 @@ nextflow run nf_pipeline.nf \
     --genome_dir_abs_path '/absolute/path/to/dir/where/genome/fasta/is/sarscov2.fasta' \
     --pangolin_db_absolute_path_on_host '/home/user/path/to/pangolin_db' \
     --nextclade_db_absolute_path_on_host '/home/user/path/to/nextclade_db' \
+    --kraken2_db_absolute_path_on_host '/home/user/path/to/kraken2_db' \
     -config nextflow.config \
     -with-report report.html \
     -with-dag flowchart-raw.png \

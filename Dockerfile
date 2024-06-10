@@ -12,6 +12,7 @@ ARG USHER_VERSION="0.6.3"
 ARG ISA_VERSION="2.30.0"
 ARG TBB_VERSION="2019_U9"
 ARG TBB_VERSION2="v2021.10.0"
+ARG KRAKEN2_VERSION="v2.1.3"
 
 # This is multistage, parallel build. We first build a base image.
 # Then, in parallel, we build all the tools we need.
@@ -273,7 +274,19 @@ RUN curl -fsSL "https://github.com/oneapi-src/oneTBB/archive/${TBB_VERSION}.tar.
     mkdir -p /opt/tbb/lib && \
     cp /downloads/usher/build/tbb_cmake_build/tbb_cmake_build_subdir_release/libtbb_preview.so.2 /opt/tbb/lib
 
+# builder-kraken2
+FROM builder-base as builder-kraken2
+ARG KRAKEN2_VERSION
+WORKDIR /downloads
+RUN git clone --depth 1 --branch ${KRAKEN2_VERSION} https://github.com/DerrickWood/kraken2.git
+WORKDIR /downloads/kraken2
+RUN mkdir -p /opt/kraken2 && \
+    ./install_kraken2.sh /opt/kraken2/bin
 
+# builder-modeller
+FROM builder-base as modeller
+ADD third-party/modeller/modeller.tar.gz /opt
+ADD third-party/modeller/config.py /opt/modeller/modlib/modeller/config.py
 
 # main
 FROM python:3.11.8-slim-bookworm AS main
@@ -299,6 +312,7 @@ RUN apt update && \
                                               libgsl27 \
                                               minimap2 \
                                               libcurl4 \
+                                              libgomp1 \
                                               procps
 
 ADD third-party/mafft/mafft_7.520-1_amd64.deb /
@@ -313,6 +327,7 @@ COPY --from=builder-htslib /opt/htslib /opt/htslib
 COPY --from=builder-bedtools /downloads/bedtools2 /opt/bedtools
 COPY --from=builder-vcftools /opt/vcftools /opt/vcftools
 COPY --from=builder-snpeff /opt/snpEff /opt/snpEff
+COPY --from=builder-picard /opt/picard /opt/picard
 COPY --from=builder-gofasta /opt/gofasta /opt/gofasta
 COPY --from=builder-faToVcf /opt/blat /opt/blat
 # Usher builds with several binaries, but pelines use only a one. We copy only that one.
@@ -320,7 +335,8 @@ COPY --from=builder-usher /opt/usher/bin/usher /opt/usher/bin/usher
 COPY --from=builder-usher /opt/tbb /opt/tbb
 COPY --from=builder-nextclade /opt/nextclade /opt/nextclade
 COPY --from=builder-varscan /opt/varscan /opt/varscan
-COPY --from=builder-picard /opt/picard /opt/picard
+COPY --from=builder-kraken2 /opt/kraken2 /opt/kraken2
+COPY --from=modeller /opt/modeller /opt/modeller
 
 ENV GENOME_ID="MN908947.3"
 ENV GENOME_FASTA="/home/data/genome/sarscov2.fasta"
@@ -348,8 +364,9 @@ $VIRTUAL_ENV/bin:\
 ## Kopiowanie wymaganych plikow
 COPY data/genome/SarsCov2 /home/data/genome
 COPY data/primers /home/data/primers
-COPY data/coinfections  /home/data/coinfections
-ADD data/generic/generic_data.tar.gz /home/SARS-CoV2
+COPY data/coinfections /home/data/coinfections
+COPY data/modeller /home/data/modeller
+#ADD data/generic/generic_data.tar.gz /home/SARS-CoV2
 
 WORKDIR /home
 

@@ -50,6 +50,8 @@ include { consensusMasking } from './modules/consensusMasking.nf'
 include { pangolin } from './modules/pangolin.nf'
 include { nextclade } from './modules/nextclade.nf'
 include { snpEff } from './modules/snpEff.nf'
+include { kraken2 } from './modules/kraken2.nf'
+include { modeller } from './modules/modeller.nf'
 
 workflow {
     // Channel
@@ -84,7 +86,8 @@ workflow {
     nextclade(consensusMasking.out)
 
     // Auxiliary tasks
+    kraken2(reads)
     coinfections(minimap.out, primers)
     snpEff(merge_runs.out.join(ambiguities.out))
-
+    modeller(nextclade.out[1])
 }
