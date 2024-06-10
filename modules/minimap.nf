@@ -10,7 +10,7 @@ process minimap {
     script:
     sampleId = reads.baseName.replace('.fastq', '')
     """
-    minimap2 -a -x map-ont -t ${params.threads} ${params.input_genome} ${reads} | \
+    minimap2 -a -x map-ont -t ${params.threads} \${GENOME_FASTA} ${reads} | \
         samtools view -bS -F 2052 - | \
         samtools sort -o sorted.bam -
     samtools index sorted.bam

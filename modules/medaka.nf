@@ -11,6 +11,8 @@ process medaka {
 
     script:
     """
+    GENOME_ID="MN908947.3"
+    GENOME_FASTA="/home/data/genome/sarscov2.fasta"
     medaka consensus --model ${params.medaka_model} \
                      --threads ${params.threads} \
                      --chunk_len ${params.chunk_size} \
@@ -18,8 +20,8 @@ process medaka {
                      forvariants.bam \
                      forvariants.hdf
 
-    medaka variant ${params.input_genome} forvariants.hdf medaka.vcf
-    medaka tools annotate medaka.vcf ${params.input_genome} forvariants.bam medaka_annotated.vcf
+    medaka variant \${GENOME_FASTA} forvariants.hdf medaka.vcf
+    medaka tools annotate medaka.vcf \${GENOME_FASTA} forvariants.bam medaka_annotated.vcf
     
     bgzip medaka.vcf; tabix medaka.vcf.gz
     bgzip medaka_annotated.vcf; tabix medaka_annotated.vcf.gz

@@ -30,10 +30,7 @@ params.medaka_model = 'r941_min_hac_g507' // Model used by medaka to identify SN
 params.chunk_size = 800                   // Chunk size for medaka
 params.chunk_overlap = 400                // Chunk overlap for medaka
 
-params.input_genome = '/home/data/genome/sarscov2.fasta' // Path to the reference genome fasta
 
-
-include { genome_id } from './modules/genome_id.nf'
 include { minimap } from './modules/minimap.nf'
 include { filter } from './modules/filter.nf'
 include { filter as filter_2nd } from './modules/filter.nf'
@@ -52,6 +49,7 @@ include { consensus } from './modules/consensus.nf'
 include { consensusMasking } from './modules/consensusMasking.nf'
 include { pangolin } from './modules/pangolin.nf'
 include { nextclade } from './modules/nextclade.nf'
+include { snpEff } from './modules/snpEff.nf'
 
 workflow {
     // Channel
@@ -59,14 +57,13 @@ workflow {
     primers = Channel.value(params.primers as Path)
 
     // Processes
-    genome_id()
 
     // 1st run
     minimap(reads)
     filter(minimap.out, primers)
     lowCov(filter.out)
     medaka(filter.out)
-    extract_snp(medaka.out, genome_id.out)
+    extract_snp(medaka.out)
     new_ref_genome(extract_snp.out)
 
     // 2nd run
@@ -77,7 +74,7 @@ workflow {
     // post-runs tasks
     ambiguities(filter_2nd.out)
     merge(medaka_2nd.out.join(ambiguities.out))
-    frameshift(merge.out, genome_id.out)
+    frameshift(merge.out)
     merge_runs(extract_snp.out.join(frameshift.out))
     consensus(merge_runs.out)
     consensusMasking(lowCov.out[1].join(consensus.out))
@@ -86,8 +83,8 @@ workflow {
     pangolin(consensusMasking.out)
     nextclade(consensusMasking.out)
 
-
     // Auxiliary tasks
     coinfections(minimap.out, primers)
+    snpEff(merge_runs.out)
 
 }

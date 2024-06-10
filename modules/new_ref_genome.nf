@@ -9,6 +9,6 @@ process new_ref_genome {
 
     script:
     """
-    cat ${params.input_genome} | bcftools consensus medaka_annotated_filtered-2.vcf.gz  > new_ref_genome_from_medaka.fasta
+    cat \${GENOME_FASTA} | bcftools consensus medaka_annotated_filtered-2.vcf.gz  > new_ref_genome_from_medaka.fasta
     """
 }

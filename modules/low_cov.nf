@@ -12,6 +12,6 @@ process lowCov {
     """
     pysam_quality_mask_final.py forvariants.bam ${params.quality_coverage} ${params.mask}
     cat quality_mask.bed | bedtools merge -d 1 |  awk 'BEGIN {OFS = "\t"}; {if (\$3-\$2 > 3) print \$1,\$2,\$3}' >> low_coverage.bed
-    bedtools maskfasta -fi ${params.input_genome} -bed low_coverage.bed -fo lowcoverage_masked.fa
+    bedtools maskfasta -fi \${GENOME_FASTA} -bed low_coverage.bed -fo lowcoverage_masked.fa
     """
 }

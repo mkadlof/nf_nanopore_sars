@@ -312,6 +312,7 @@ COPY --from=builder-bcftools /opt/bcftools /opt/bcftools
 COPY --from=builder-htslib /opt/htslib /opt/htslib
 COPY --from=builder-bedtools /downloads/bedtools2 /opt/bedtools
 COPY --from=builder-vcftools /opt/vcftools /opt/vcftools
+COPY --from=builder-snpeff /opt/snpEff /opt/snpEff
 COPY --from=builder-gofasta /opt/gofasta /opt/gofasta
 COPY --from=builder-faToVcf /opt/blat /opt/blat
 # Usher builds with several binaries, but pelines use only a one. We copy only that one.
@@ -321,6 +322,8 @@ COPY --from=builder-nextclade /opt/nextclade /opt/nextclade
 COPY --from=builder-varscan /opt/varscan /opt/varscan
 COPY --from=builder-picard /opt/picard /opt/picard
 
+ENV GENOME_ID="MN908947.3"
+ENV GENOME_FASTA="/home/data/genome/sarscov2.fasta"
 ENV PYTHONPATH="/home/external_databases/pangolin"
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH /opt/modeller/bin:\

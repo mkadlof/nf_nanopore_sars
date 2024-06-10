@@ -9,7 +9,7 @@ process ambiguities {
 
     script:
     """
-    samtools mpileup -f ${params.input_genome} -B -Q 1 forvariants.bam >> ${sampleId}.mpileup
+    samtools mpileup -f \${GENOME_FASTA} -B -Q 1 forvariants.bam >> ${sampleId}.mpileup
     java -jar /opt/varscan/varscan.jar pileup2cns ${sampleId}.mpileup \
                                                   --min-avg-qual 1 \
                                                   --p-value ${params.pval} \

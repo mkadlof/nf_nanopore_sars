@@ -9,6 +9,6 @@ process consensus {
 
     script:
     """
-    cat ${params.input_genome} | bcftools consensus medaka_and_varscan_final_tworun.vcf.gz > medaka.fasta
+    cat \${GENOME_FASTA} | bcftools consensus medaka_and_varscan_final_tworun.vcf.gz > medaka.fasta
     """
 }

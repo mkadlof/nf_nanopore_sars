@@ -16,7 +16,7 @@ process coinfections {
     samtools ampliconclip --filter-len \${length_filtering} --both-ends -b ${primers} --tolerance ${params.bed_offset} -o forcoinfections_presorted.bam -O bam sorted.bam
     samtools sort  -@ ${params.threads} -o forcoinfections.bam forcoinfections_presorted.bam
     samtools index forcoinfections.bam
-    samtools mpileup  -f ${params.input_genome} -Q 1 forcoinfections.bam >> coinfections.mpileup
+    samtools mpileup  -f \${GENOME_FASTA} -Q 1 forcoinfections.bam >> coinfections.mpileup
 
     # Calling varscan
     java -jar /opt/varscan/varscan.jar pileup2snp coinfections.mpileup  --min-avg-qual 1 --p-value 0.5 --min-var-freq 0.05 --min-coverage ${params.min_cov} --min-reads2 0  >> detected_variants_varscan_coinfections.txt
