@@ -3,15 +3,15 @@ ARG SAMTOOLS_VERSION="1.17"
 ARG BCFTOOLS_VERSION="1.17"
 ARG HTSLIB_VERSION="1.17"
 ARG BEDTOOLS_VERSION="2.31.0"
+ARG VARSCAN_VERSION="2.4.6"
 ARG PANGOLIN_VERSION="4.3.1"
+ARG NEXTCLADE_VERSION="3.3.1"
+ARG PICARD_VERSION="2.27.5"
 ARG GOFASTA_VERSION="1.2.1"
 ARG USHER_VERSION="0.6.3"
 ARG ISA_VERSION="2.30.0"
 ARG TBB_VERSION="2019_U9"
 ARG TBB_VERSION2="v2021.10.0"
-ARG NEXTCLADE_VERSION="3.3.1"
-ARG VARSCAN_VERSION="2.4.6"
-ARG PICARD_VERSION="2.27.5"
 
 # This is multistage, parallel build. We first build a base image.
 # Then, in parallel, we build all the tools we need.
@@ -38,12 +38,10 @@ RUN apt update && \
                                               libtool \
                                               zlib1g-dev \
                                               libbz2-dev \
-                                              liblzma-dev \
-                                              python3 \
-                                              python3-pip \
-                                              python3-dev \
-                                              python3-venv
+                                              liblzma-dev
 
+# Here we create a new python virtual environment. We can later just copy it to production container
+# It is "activated" by adding it to PATH
 RUN python3 -m venv $VIRTUAL_ENV
 
 # builder-samtools
@@ -58,6 +56,7 @@ WORKDIR /downloads/samtools-${SAMTOOLS_VERSION}
 RUN ./configure --prefix=/opt/samtools --without-curses --disable-bz2 --disable-lzma && \
     make -j `nproc` && \
     make -j `nproc` install
+ENV PATH=/opt/samtools/bin:${PATH}
 
 # builder-bcftools
 FROM builder-base as builder-bcftools
@@ -70,6 +69,7 @@ WORKDIR /downloads/bcftools-${BCFTOOLS_VERSION}
 RUN ./configure --prefix=/opt/bcftools --disable-bz2 --disable-lzma && \
     make -j `nproc` && \
     make -j `nproc` install
+ENV PATH=/opt/bcftools/bin:${PATH}
 
 # builder-htslib
 FROM builder-base as builder-htslib
@@ -94,6 +94,13 @@ RUN curl -fsSL "https://github.com/arq5x/bedtools2/releases/download/v${BEDTOOLS
 WORKDIR /downloads/bedtools2
 RUN make -j `nproc`
 
+# builder-varscan
+FROM builder-base as builder-varscan
+ARG VARSCAN_VERSION
+WORKDIR /opt/varscan
+RUN curl -fsSL "https://github.com/dkoboldt/varscan/releases/download/v${VARSCAN_VERSION}/VarScan.v${VARSCAN_VERSION}.jar" -o "VarScan.v${VARSCAN_VERSION}.jar" && \
+    ln -s VarScan.v${VARSCAN_VERSION}.jar varscan.jar
+
 # builder-vcftools
 FROM builder-base as builder-vcftools
 # TODO: git is always downloading latest version. We should use specific version, tag or commit.
@@ -103,6 +110,7 @@ RUN git clone --depth 1 https://github.com/vcftools/vcftools.git /downloads/vcft
     ./configure --prefix=/opt/vcftools && \
     make -j `nproc` && \
     make -j `nproc` install
+ENV PATH="/opt/vcftools/bin:$PATH"
 
 # builder-freebayes
 FROM builder-base as builder-freebayes
@@ -114,14 +122,18 @@ RUN curl -fsSL "https://github.com/freebayes/freebayes/releases/download/v${FREE
     ln -s freebayes-${FREEBAYESS_VERSION}-linux-amd64-static freebayes
 ENV PATH="/opt/freebayes/bin:$PATH"
 
+# builder-snpeff
+FROM builder-base as builder-snpeff
+WORKDIR /opt
+ADD third-party/snpEff.tar.gz /opt
+COPY data/snpEff /opt/snpEff
+
 # builder-python
 # Here goes all packages installed as python packages.
 # - Pangolin
 # - PycoQC
 FROM builder-base as builder-python
 ARG PANGOLIN_VERSION
-ENV VIRTUAL_ENV=/opt/venv
-ENV PATH=$VIRTUAL_ENV/bin:${PATH}
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 WORKDIR /downloads
@@ -129,9 +141,27 @@ RUN curl -fsSL https://github.com/cov-lineages/pangolin/archive/refs/tags/v${PAN
     tar -zxvf v${PANGOLIN_VERSION}.tar.gz && \
     rm v${PANGOLIN_VERSION}.tar.gz
 WORKDIR /downloads/pangolin-${PANGOLIN_VERSION}
-RUN python3 setup.py install && \
+RUN python setup.py install && \
     pip freeze && \
     pip uninstall --yes pangolin_data
+
+# builder-nextclade
+FROM builder-base as builder-nextclade
+ARG NEXTCLADE_VERSION
+WORKDIR /opt/nextclade/bin
+RUN curl -fsSL "https://github.com/nextstrain/nextclade/releases/download/${NEXTCLADE_VERSION}/nextclade-x86_64-unknown-linux-gnu" -o "nextclade" && \
+    chmod +x nextclade
+RUN mkdir -p /SARS-CoV2/
+ENV PATH="/opt/nextclade/bin:$PATH"
+RUN nextclade dataset get --name='sars-cov-2' --output-dir=/SARS-CoV2/nextclade/
+
+
+# builder-picard
+FROM builder-base as builder-picard
+ARG PICARD_VERSION
+WORKDIR /opt/picard
+RUN curl -fsSL "https://github.com/broadinstitute/picard/releases/download/${PICARD_VERSION}/picard.jar" -o "picard.jar"
+
 
 # builder-gofasta
 FROM builder-base as builder-gofasta
@@ -243,28 +273,7 @@ RUN curl -fsSL "https://github.com/oneapi-src/oneTBB/archive/${TBB_VERSION}.tar.
     mkdir -p /opt/tbb/lib && \
     cp /downloads/usher/build/tbb_cmake_build/tbb_cmake_build_subdir_release/libtbb_preview.so.2 /opt/tbb/lib
 
-# builder-nextclade
-FROM builder-base as builder-nextclade
-ARG NEXTCLADE_VERSION
-WORKDIR /opt/nextclade/bin
-RUN curl -fsSL "https://github.com/nextstrain/nextclade/releases/download/${NEXTCLADE_VERSION}/nextclade-x86_64-unknown-linux-gnu" -o "nextclade" && \
-    chmod +x nextclade
-RUN mkdir -p /SARS-CoV2/
-ENV PATH="/opt/nextclade/bin:$PATH"
-RUN nextclade dataset get --name='sars-cov-2' --output-dir=/SARS-CoV2/nextclade/
 
-# builder-varscan
-FROM builder-base as builder-varscan
-ARG VARSCAN_VERSION
-WORKDIR /opt/varscan
-RUN curl -fsSL "https://github.com/dkoboldt/varscan/releases/download/v${VARSCAN_VERSION}/VarScan.v${VARSCAN_VERSION}.jar" -o "VarScan.v${VARSCAN_VERSION}.jar" && \
-    ln -s VarScan.v${VARSCAN_VERSION}.jar varscan.jar
-
-# builder-picard
-FROM builder-base as builder-picard
-ARG PICARD_VERSION
-WORKDIR /opt/picard
-RUN curl -fsSL "https://github.com/broadinstitute/picard/releases/download/${PICARD_VERSION}/picard.jar" -o "picard.jar"
 
 # main
 FROM python:3.11.8-slim-bookworm AS main
@@ -275,10 +284,36 @@ LABEL maintainer="Michał Kadlof <mkadlof@pzh.gov.pl>"
 RUN echo 'alias ls="ls --color --group-directories-first"' >> /root/.bashrc && \
     echo "PS1='\[\033[36m\][\[\033[m\]\[\033[34m\]\[\e[1m \u@\h \e[0m\] \[\033[32m\]\W\[\033[m\]\[\033[36m\]]\[\033[m\]# '" >> /root/.bashrc
 
+ENV LD_LIBRARY_PATH="/opt/htslib/lib:/opt/tbb/lib:/opt/isa-l/lib:${LD_LIBRARY_PATH}"
+ENV PYTHONPATH="/home/external_databases/pangolin"
+
+#RUN apt update && \
+#    apt install -y --no-install-recommends bc  \
+#                                           openjdk-17-jre-headless \
+#                                           libdeflate-dev \
+#                                           libcurl3-gnutls\
+#                                           libcurl4 \
+#                                           mafft \
+#                                           libboost-program-options1.74.0 \
+#                                           libboost-iostreams1.74.0 \
+#                                           libboost-filesystem1.74.0 \
+#                                           libprotobuf32 \
+#                                           libgsl27 \
+#                                           procps \
+#                                           libgomp1 \
+#                                           seqtk \
+#                                           muscle3 \
+#                                           minimap2
 RUN apt update && \
-    apt install --yes --no-install-recommends  bc\
+    apt install --yes --no-install-recommends bc\
                                               openjdk-17-jre-headless \
                                               libdeflate-dev \
+                                              libcurl3-gnutls\
+                                              libboost-program-options1.74.0 \
+                                              libboost-iostreams1.74.0 \
+                                              libboost-filesystem1.74.0 \
+                                              libprotobuf32 \
+                                              libgsl27 \
                                               minimap2 \
                                               libcurl4 \
                                               procps
@@ -287,6 +322,19 @@ ADD third-party/mafft/mafft_7.520-1_amd64.deb /
 RUN dpkg -i mafft_7.520-1_amd64.deb && \
     rm -f /mafft_7.520-1_amd64.deb
 
+#RUN apt update && \
+#    apt install --yes --no-install-recommends  bc\
+#                                              openjdk-17-jre-headless \
+#                                              libdeflate-dev \
+#                                              minimap2 \
+#                                              libcurl4 \
+#                                              procps
+#
+#ADD third-party/mafft/mafft_7.520-1_amd64.deb /
+#RUN dpkg -i mafft_7.520-1_amd64.deb && \
+#    rm -f /mafft_7.520-1_amd64.deb
+
+COPY --from=builder-base /opt /opt
 COPY --from=builder-python /opt/venv /opt/venv
 COPY --from=builder-samtools /opt/samtools /opt/samtools
 COPY --from=builder-bcftools /opt/bcftools /opt/bcftools
@@ -295,29 +343,55 @@ COPY --from=builder-bedtools /downloads/bedtools2 /opt/bedtools
 COPY --from=builder-vcftools /opt/vcftools /opt/vcftools
 COPY --from=builder-gofasta /opt/gofasta /opt/gofasta
 COPY --from=builder-faToVcf /opt/blat /opt/blat
+# Usher builds with several binaries, but pelines use only a one. We copy only that one.
 COPY --from=builder-usher /opt/usher/bin/usher /opt/usher/bin/usher
 COPY --from=builder-usher /opt/tbb /opt/tbb
 COPY --from=builder-nextclade /opt/nextclade /opt/nextclade
 COPY --from=builder-varscan /opt/varscan /opt/varscan
 COPY --from=builder-picard /opt/picard /opt/picard
 
-ENV VIRTUAL_ENV=/opt/venv
-ENV PATH $VIRTUAL_ENV/bin:\
-/opt/samtools/bin:\
-/opt/bcftools/bin:\
-/opt/htslib/bin:\
-/opt/bedtools/bin:\
-/opt/vcftools/bin:\
-/opt/gofasta/bin:\
-/opt/blat/bin:\
-/opt/nextclade/bin:\
-/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ENV PYTHONPATH="/home/external_databases/pangolin"
+ENV PATH="/opt/modeller/bin:/opt/kraken2/bin:/opt/usher/bin:/opt/blat/bin:/opt/gofasta/bin:/opt/minimap2/bin:/opt/bwa/bin:/opt/FastQC:/opt/nextclade/bin:/opt/freebayes/bin:/opt/vcftools/bin:/opt/lofreq/bin:/opt/ivar/bin:/opt/bedtools/bin:/opt/bedtools2/bin:/opt/htslib/bin:/opt/bcftools/bin:/opt/samtools/bin:/opt/venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+#ENV VIRTUAL_ENV=/opt/venv
+#ENV PATH $VIRTUAL_ENV/bin:\
+#/opt/samtools/bin:\
+#/opt/bcftools/bin:\
+#/opt/htslib/bin:\
+#/opt/bedtools/bin:\
+#/opt/vcftools/bin:\
+#/opt/gofasta/bin:\
+#/opt/blat/bin:\
+#/opt/nextclade/bin:\
+#/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+#ENV PYTHONPATH="/home/external_databases/pangolin"
 
 ## Kopiowanie wymaganych plikow
 COPY data/genome/SarsCov2 /home/data/genome
 COPY data/primers /home/data/primers
 COPY data/coinfections  /home/data/coinfections
+ADD data/generic/generic_data.tar.gz /home/SARS-CoV2
 
 WORKDIR /home
 
+# updater container
+FROM python:3.11.8-slim-bookworm AS updater
+
+LABEL maintainer="Michal Lazniewski <mlazniewski@pzh.gov.pl>"
+LABEL maintainer="Michał Kadlof <mkadlof@pzh.gov.pl>"
+
+COPY --from=builder-nextclade /opt/nextclade /opt/nextclade
+RUN apt update && \
+    apt install -y --no-install-recommends git wget && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    pip install --no-cache-dir boto3==1.34.75
+
+ADD bin/update.sh /home/update.sh
+ADD bin/kraken_updater.py /home/kraken_updater.py
+WORKDIR /home/pangolin
+WORKDIR /home/nextclade
+WORKDIR /home/kraken
+WORKDIR /home/freyja
+RUN chown -R 1000:1000 /home && chmod 777 /home/pangolin /home/nextclade /home/kraken /home/freyja
+WORKDIR /home
+ENTRYPOINT ["/home/update.sh"]
