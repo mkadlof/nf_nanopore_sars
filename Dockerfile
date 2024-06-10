@@ -287,23 +287,6 @@ RUN echo 'alias ls="ls --color --group-directories-first"' >> /root/.bashrc && \
 ENV LD_LIBRARY_PATH="/opt/htslib/lib:/opt/tbb/lib:/opt/isa-l/lib:${LD_LIBRARY_PATH}"
 ENV PYTHONPATH="/home/external_databases/pangolin"
 
-#RUN apt update && \
-#    apt install -y --no-install-recommends bc  \
-#                                           openjdk-17-jre-headless \
-#                                           libdeflate-dev \
-#                                           libcurl3-gnutls\
-#                                           libcurl4 \
-#                                           mafft \
-#                                           libboost-program-options1.74.0 \
-#                                           libboost-iostreams1.74.0 \
-#                                           libboost-filesystem1.74.0 \
-#                                           libprotobuf32 \
-#                                           libgsl27 \
-#                                           procps \
-#                                           libgomp1 \
-#                                           seqtk \
-#                                           muscle3 \
-#                                           minimap2
 RUN apt update && \
     apt install --yes --no-install-recommends bc\
                                               openjdk-17-jre-headless \
@@ -322,18 +305,6 @@ ADD third-party/mafft/mafft_7.520-1_amd64.deb /
 RUN dpkg -i mafft_7.520-1_amd64.deb && \
     rm -f /mafft_7.520-1_amd64.deb
 
-#RUN apt update && \
-#    apt install --yes --no-install-recommends  bc\
-#                                              openjdk-17-jre-headless \
-#                                              libdeflate-dev \
-#                                              minimap2 \
-#                                              libcurl4 \
-#                                              procps
-#
-#ADD third-party/mafft/mafft_7.520-1_amd64.deb /
-#RUN dpkg -i mafft_7.520-1_amd64.deb && \
-#    rm -f /mafft_7.520-1_amd64.deb
-
 COPY --from=builder-base /opt /opt
 COPY --from=builder-python /opt/venv /opt/venv
 COPY --from=builder-samtools /opt/samtools /opt/samtools
@@ -350,20 +321,26 @@ COPY --from=builder-nextclade /opt/nextclade /opt/nextclade
 COPY --from=builder-varscan /opt/varscan /opt/varscan
 COPY --from=builder-picard /opt/picard /opt/picard
 
-ENV PATH="/opt/modeller/bin:/opt/kraken2/bin:/opt/usher/bin:/opt/blat/bin:/opt/gofasta/bin:/opt/minimap2/bin:/opt/bwa/bin:/opt/FastQC:/opt/nextclade/bin:/opt/freebayes/bin:/opt/vcftools/bin:/opt/lofreq/bin:/opt/ivar/bin:/opt/bedtools/bin:/opt/bedtools2/bin:/opt/htslib/bin:/opt/bcftools/bin:/opt/samtools/bin:/opt/venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
-#ENV VIRTUAL_ENV=/opt/venv
-#ENV PATH $VIRTUAL_ENV/bin:\
-#/opt/samtools/bin:\
-#/opt/bcftools/bin:\
-#/opt/htslib/bin:\
-#/opt/bedtools/bin:\
-#/opt/vcftools/bin:\
-#/opt/gofasta/bin:\
-#/opt/blat/bin:\
-#/opt/nextclade/bin:\
-#/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-#ENV PYTHONPATH="/home/external_databases/pangolin"
+ENV PYTHONPATH="/home/external_databases/pangolin"
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH /opt/modeller/bin:\
+/opt/kraken2/bin:\
+/opt/usher/bin:\
+/opt/blat/bin:\
+/opt/gofasta/bin:\
+/opt/bwa/bin:\
+/opt/FastQC:\
+/opt/nextclade/bin:\
+/opt/freebayes/bin:\
+/opt/vcftools/bin:\
+/opt/lofreq/bin:\
+/opt/ivar/bin:\
+/opt/bedtools/bin:\
+/opt/htslib/bin:\
+/opt/bcftools/bin:\
+/opt/samtools/bin:\
+$VIRTUAL_ENV/bin:\
+/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 ## Kopiowanie wymaganych plikow
 COPY data/genome/SarsCov2 /home/data/genome
