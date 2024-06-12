@@ -313,7 +313,8 @@ RUN apt update && \
                                               minimap2 \
                                               libcurl4 \
                                               libgomp1 \
-                                              procps
+                                              procps \
+                                              seqtk
 
 ADD third-party/mafft/mafft_7.520-1_amd64.deb /
 RUN dpkg -i mafft_7.520-1_amd64.deb && \

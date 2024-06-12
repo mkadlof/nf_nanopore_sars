@@ -52,6 +52,7 @@ include { nextclade } from './modules/nextclade.nf'
 include { snpEff } from './modules/snpEff.nf'
 include { kraken2 } from './modules/kraken2.nf'
 include { modeller } from './modules/modeller.nf'
+include { dehumanization } from './modules/dehumanization.nf'
 
 workflow {
     // Channel
@@ -87,6 +88,8 @@ workflow {
 
     // Auxiliary tasks
     kraken2(reads)
+    dehumanization(minimap.out, reads)
+
     coinfections(minimap.out, primers)
     snpEff(merge_runs.out.join(ambiguities.out))
     modeller(nextclade.out[1])
