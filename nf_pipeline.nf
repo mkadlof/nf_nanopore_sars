@@ -54,6 +54,7 @@ include { kraken2 } from './modules/kraken2.nf'
 include { modeller } from './modules/modeller.nf'
 include { dehumanization } from './modules/dehumanization.nf'
 include { simpleStats } from './modules/simpleStats.nf'
+include { wgsMetrics } from './modules/wgsMetrics.nf'
 
 workflow {
     // Channel
@@ -91,6 +92,7 @@ workflow {
     kraken2(reads)
     dehumanization(minimap.out, reads)
     simpleStats(consensusMasking.out)
+    wgsMetrics(filter_2nd.out)
 
     coinfections(minimap.out, primers)
     snpEff(merge_runs.out.join(ambiguities.out))
