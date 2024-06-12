@@ -53,6 +53,7 @@ include { snpEff } from './modules/snpEff.nf'
 include { kraken2 } from './modules/kraken2.nf'
 include { modeller } from './modules/modeller.nf'
 include { dehumanization } from './modules/dehumanization.nf'
+include { simpleStats } from './modules/simpleStats.nf'
 
 workflow {
     // Channel
@@ -89,6 +90,7 @@ workflow {
     // Auxiliary tasks
     kraken2(reads)
     dehumanization(minimap.out, reads)
+    simpleStats(consensusMasking.out)
 
     coinfections(minimap.out, primers)
     snpEff(merge_runs.out.join(ambiguities.out))
